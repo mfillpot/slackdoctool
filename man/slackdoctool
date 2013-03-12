@@ -1,0 +1,79 @@
+." Manpage for slackdoctool.
+." Contact mfilpot@gmail.com to correct errors or typos.
+.TH slackdoctool 1 "12 Mar 2013" "0.1.1" "slackdoctool man page"
+.PD
+.SH NAME
+.B slackdoctool
+Functions to interact with the Slackware Documentation Project
+.PD
+.SH SYNPOSIS
+.B slackdoctool
+[options]
+.PD
+.SH DESCRIPTION
+.B slackdoctool
+is a collection of functions and files intended to simplify the interaction and writing of article for the Slackware Documentation Project at http://docs.slackware.com
+.PD
+.SH OPTIONS
+.TP 10
+.BI \-h "\| \^"
+Display this dialog
+.TP 10
+.BI \-S "\| \^"
+Fetch the syntax file(s).
+.TP 10
+.BI \-s "\| string\^"
+Apply the syntax highlighting file for the chosen application.
+.B Valid options are kate and vim.
+.TP 10
+.BI \-T "\| \^"
+Fetch all templates from the website
+.TP 10
+.BI \-w "\| sring\^"
+Fetch an article from the slackdocs URL given.
+.B If the -d argument is not given it will save in the slackdocs directory.
+.TP 10
+.BI \-f "\| file\^"
+Fetch articles from the slackdocs wiki from the list contained within the specified file.
+.B If no -d option is given it will save the documents into the slackdocs directory.
+.TP 10
+.BI \-d "\| string\^"
+.B Only valid with the -f and -w arguments.
+This specifies the destination directory which will contain the fetched file(s).
+.TP 10
+.BI \-c "\| string\^"
+Copy the selected file's contents into the clipboard.
+.TP 10
+.BI \-n "\| number\^"
+Create a new file based upon the specified template. The template list can be viewed with the -l option.
+.TP 10
+.BI \-o "\| string\^"
+Only used with the 
+.B -n
+option. The argument will contain the name of the new output file.
+.TP 10
+.BI \-r "\| \^"
+Refresh the list of templates from the slackdocs wiki.
+.TP 10
+.BI \-l "\| \^"
+List all available templates.
+.TP 10
+.BI \-u "\| \^"
+Check for and download updates to this script.
+.TP 10
+.BI \-a "\| \^"
+Download all base and syntax files from the slackdocs wiki.
+.PD
+.SH EXAMPLES
+slackdoctool -a||Fetches all possible files and builds the local directory structure.
+.PD
+.SH BUGS
+Bugtracker  http://github.com/mfillpot/slackdoctool/issues
+
+
+At this time there are no known bugs.
+.PD
+.SH AUTHORS
+Matthew Fillpot (mfilpot@gmail.com)
+
+Marcin Herda
