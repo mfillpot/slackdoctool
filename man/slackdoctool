@@ -1,6 +1,6 @@
 ." Manpage for slackdoctool.
 ." Contact mfilpot@gmail.com to correct errors or typos.
-.TH slackdoctool 1 "12 Mar 2013" "0.1.1" "slackdoctool man page"
+.TH slackdoctool 1 "14 Mar 2013" "0.1.1" "slackdoctool man page"
 .PD
 .SH NAME
 .B slackdoctool
@@ -22,14 +22,14 @@ Display this dialog
 .BI \-S "\| \^"
 Fetch the syntax file(s).
 .TP 10
-.BI \-s "\| string\^"
+.BI \-s "\| app\^"
 Apply the syntax highlighting file for the chosen application.
 .B Valid options are kate and vim.
 .TP 10
 .BI \-T "\| \^"
 Fetch all templates from the website
 .TP 10
-.BI \-w "\| sring\^"
+.BI \-w "\| url\^"
 Fetch an article from the slackdocs URL given.
 .B If the -d argument is not given it will save in the slackdocs directory.
 .TP 10
@@ -37,17 +37,17 @@ Fetch an article from the slackdocs URL given.
 Fetch articles from the slackdocs wiki from the list contained within the specified file.
 .B If no -d option is given it will save the documents into the slackdocs directory.
 .TP 10
-.BI \-d "\| string\^"
+.BI \-d "\| dir\^"
 .B Only valid with the -f and -w arguments.
 This specifies the destination directory which will contain the fetched file(s).
 .TP 10
-.BI \-c "\| string\^"
+.BI \-c "\| file\^"
 Copy the selected file's contents into the clipboard.
 .TP 10
 .BI \-n "\| number\^"
 Create a new file based upon the specified template. The template list can be viewed with the -l option.
 .TP 10
-.BI \-o "\| string\^"
+.BI \-o "\| file\^"
 Only used with the 
 .B -n
 option. The argument will contain the name of the new output file.
@@ -59,13 +59,18 @@ Refresh the list of templates from the slackdocs wiki.
 List all available templates.
 .TP 10
 .BI \-u "\| \^"
-Check for and download updates to this script.
+Check for an update to this script.
 .TP 10
 .BI \-a "\| \^"
 Download all base and syntax files from the slackdocs wiki.
 .PD
 .SH EXAMPLES
-slackdoctool -a||Fetches all possible files and builds the local directory structure.
+.TP 4
+.BI slackdoctool\ \-w\ "howtos:software"\ \-d\ /home/user/wiki
+This command will fetch the dokuwiki page from http://docs.slackware.com/howtos:software and save it the /home/user/wiki directory.
+.TP 4
+.BI slackdoctool\ \-f\ doclist.txt\ \-d\ /home/user/wiki
+This command will fetch the dokuwiki page listed in the doclist.txt file and save them into the /home/user/wiki directory.
 .PD
 .SH BUGS
 Bugtracker  http://github.com/mfillpot/slackdoctool/issues
