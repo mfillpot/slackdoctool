@@ -2,7 +2,7 @@
 # Author: Matthew Fillpot
 # Created: 2012-12-28
 # License: BSD
-VERSION="0.1.1"
+VERSION="0.1.2"
 #
 # Description
 # -------------------------------------------------------
@@ -10,37 +10,19 @@ VERSION="0.1.1"
 #  wiki content for http://docs.slackware.com
 #
 
-
-#------ TODO List -------
-#   1. See if the script is causing terminal wrapping issues from font colors
-#   and fix them
-#   12. Add a page to the wiki with vim optimizations and refer to them in
-#   the script
-#   13. Clean up the script
-#   14. Add hooks for IsOnline where appropriate
-#   15. Make a function to write list of templates into an array using the
-#     read line function
-#   15. Change SetTemps to use the function to set templates
-#   16. Change RefreshTemplates to use the function to set templates
-
-# Define the path to the repo directory
-TMP_DIR="/tmp"
-
 # Define the variables
 EXTENSION="slackdoc"
 FILETYPE="slackdocs"
 SYNF_VIM="slackdocs.vim"
 SD_DIR="${HOME}/slackdocs"
-SYNTAX_DIR="${REPO_PATH}/syntax_files"
 TEMPLATE_DIR="${SD_DIR}/templates"
-#TEMPLATE_IND=""
-#DOC_TITLE=${DOC_TITLE:-"new"}
 
 # Currently pointing tomf_test, needs to be movedto master when stable
-GIT_URL="https://raw.github.com/mfillpot/slackdoc_templates/mfillpot"
+GIT_URL="https://raw.github.com/mfillpot/slackdoctool"
 VERSION_URL="${GIT_URL}/versions.txt"
 SCRIPT_URL="${GIT_URL}/slackdoctool"
-SYNTAX_URL="${GIT_URL}/syntax_files"
+SOURCE_URL="https://raw.github.com/mfillpot/sdtbase"
+SYNTAX_URL="${SOURCE_URL}/syntax_files"
 
 SD_URL="http://docs.slackware.com"
 TEMP_URL="${SD_URL}/wiki:user:mfillpot:template_list"
@@ -52,21 +34,6 @@ NRMTXT=$(tput sgr0)
 ERRTXT=$(tput setaf 1)
 SCSTXT=$(tput setaf 2)
 
-#BLACK=$(tput setaf 0)
-#RED=$(tput setaf 1)
-#GREEN=$(tput setaf 2)
-#YELLOW=$(tput setaf 3)
-#LIME_YELLOW=$(tput setaf 190)
-#POWDER_BLUE=$(tput setaf 153)
-#BLUE=$(tput setaf 4)
-#MAGENTA=$(tput setaf 5)
-#CYAN=$(tput setaf 6)
-#WHITE=$(tput setaf 7)
-#BRIGHT=$(tput bold)
-#NORMAL=$(tput sgr0)
-#BLINK=$(tput blink)
-#REVERSE=$(tput smso)
-#UNDERLINE=$(tput smul)
 
 IsRoot() {
   # Check if the script is run as root
@@ -87,25 +54,7 @@ CheckUpdate() {
       "Your copy is up to date"
   else 
     printf "\n${BLDTXT}%s${NRMTXT}\n" \
-      "A new version is available."
-    read -p "Would you like to fetch version ${NEW_VERSION} [y/N]? " yn
-    case ${yn} in
-    [Yy*]* )
-      wget ${SCRIPT_URL} --output-document=${TMP_DIR}/slackdoctool
-      if [ "$?" = "0" ]; then
-#SCSTXT=$(tput setaf 153)
-        printf "\n${SCSTXT}%s${NRMTXT}\n" \
-          "Version ${VERSION} has been saved to ${TMP_DIR}/slackdoctool."
-      else
-        printf "\n${ERRTXT}%s${NRMTXT}\n" \
-          "The update failed, try again later."
-      fi
-      ;;
-    * )
-      printf "\n${ERRTXT}%s${NRMTXT}\n" \
-        "Download Declined, terminating action."
-      ;;
-    esac
+      "A new version (${NEW_VERSION}) is available."
   fi
 }
 
@@ -131,7 +80,6 @@ BuildStructure()
     esac
   fi
 }
-
 
 PrintText() {
   # Used to output properly wrapping text with indentation and formatting.
@@ -224,8 +172,6 @@ SetTemps() {
     TEMPS+=("${line}")
   done < ${TEMP_FILE}
 }
-
-# 
 
 AvailableTemplates() {
   # Displays a list of available templates and usage
@@ -516,17 +462,17 @@ PrintText 0 "${BLDTXT}" "OPTIONS" 1
 
 HelpArg "-h" "" "Display this dialog"
 HelpArg "-S" "" "Fetch the syntax file(s)."
-HelpArg "-s" "string" "Apply the syntax highlighting file for the chosen application. Valid options are kate and vim."
+HelpArg "-s" "app" "Apply the syntax highlighting file for the chosen application. Valid options are kate and vim."
 HelpArg "-T" "" "Fetch all templates from the website"
-HelpArg "-w" "sring" "Fetch an article from the slackdocs URL given. If the -d argument is not given it will save in the slackdocs directory."
+HelpArg "-w" "url" "Fetch an article from the slackdocs URL given. If the -d argument is not given it will save in the slackdocs directory."
 HelpArg "-f" "file" "Fetch articles from the slackdocs wiki from the list contained within the specified file. If no -d option is given it will save the documents into the slackdocs directory."
-HelpArg "-d" "string" " Only valid with the -f and -w arguments. This specifies the destination directory which will contain the fetched file(s)."
-HelpArg "-c" "string" "Copy the selected file's contents into the clipboard."
+HelpArg "-d" "dir" " Only valid with the -f and -w arguments. This specifies the destination directory which will contain the fetched file(s)."
+HelpArg "-c" "file" "Copy the selected file's contents into the clipboard."
 HelpArg "-n" "number" "Create a new file based upon the specified template. The template list can be viewed with the -l option."
-HelpArg "-o" "string" "Only used with the -n option. The argument will contain the name of the new output file."
+HelpArg "-o" "file" "Only used with the -n option. The argument will contain the name of the new output file."
 HelpArg "-r" "" "Refresh the list of templates from the slackdocs wiki."
 HelpArg "-l" "" "List all available templates."
-HelpArg "-u" "" "Check for and download updates to this script."
+HelpArg "-u" "" "Check for an update to this script."
 HelpArg "-a" "" "Download all base and syntax files from the slackdocs wiki."
 }
 
@@ -737,8 +683,6 @@ RunFunctions() {
   fi
 }
 
-#DisplayHelp
-#exit 1
 
 # Check if run as root, if root then exit
 IsRoot
@@ -749,12 +693,26 @@ CheckArgs "$@"
 # Verify that no invalid arguments are given
 CheckValid
 
-#exit 0
-
 # If no errors, then check run the functions
 BuildStructure
 RunFunctions
 
 # If it succeeds until now it processed successfully
 exit 0
+
+BLACK=$(tput setaf 0)
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+LIME_YELLOW=$(tput setaf 190)
+POWDER_BLUE=$(tput setaf 153)
+BLUE=$(tput setaf 4)
+MAGENTA=$(tput setaf 5)
+CYAN=$(tput setaf 6)
+WHITE=$(tput setaf 7)
+BRIGHT=$(tput bold)
+NORMAL=$(tput sgr0)
+BLINK=$(tput blink)
+REVERSE=$(tput smso)
+UNDERLINE=$(tput smul)
 
