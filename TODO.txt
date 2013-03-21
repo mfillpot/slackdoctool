@@ -1,6 +1,21 @@
 ------ TODO List -------
+
+MAINTENANCE
+--------------------------------------------
 Clean up the script
 
+IMPROVEMENTS
+--------------------------------------------
 Add hooks for IsOnline where appropriate
 
 Add functions to create and read a .slackdoc.conf file that can store the user's chosen directory as the slackdoc home directory
+
+in function 40 add a new function to provide error handling for the cp command
+
+Check all functions to make sure that the files/directories both exist and are accessiblee
+
+in function 41 set error handling for the xclip command
+
+BUGS
+--------------------------------------------
+

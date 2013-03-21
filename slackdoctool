@@ -1,8 +1,11 @@
 #!/bin/bash
+# Script: 00-head.sh
 # Author: Matthew Fillpot
 # Created: 2012-12-28
 # License: BSD
-VERSION="0.1.2"
+#
+# Do not change version number, it is changes based upon git tags
+VERSION=0.1.3
 #
 # Description
 # -------------------------------------------------------
@@ -18,15 +21,21 @@ SD_DIR="${HOME}/slackdocs"
 TEMPLATE_DIR="${SD_DIR}/templates"
 
 # Currently pointing tomf_test, needs to be movedto master when stable
-GIT_URL="https://raw.github.com/mfillpot/slackdoctool"
+GIT_URL="https://raw.github.com/mfillpot/slackdoctool/master"
 VERSION_URL="${GIT_URL}/versions.txt"
 SCRIPT_URL="${GIT_URL}/slackdoctool"
-SOURCE_URL="https://raw.github.com/mfillpot/sdtbase"
+SOURCE_URL="https://raw.github.com/mfillpot/sdtbase/master"
 SYNTAX_URL="${SOURCE_URL}/syntax_files"
 
 SD_URL="http://docs.slackware.com"
 TEMP_URL="${SD_URL}/wiki:user:mfillpot:template_list"
 TEMP_FILE="${SD_DIR}/templates.txt"
+
+# set a variable to hold the template list
+TEMPS=()
+
+# Add a variable to hold terminal width
+TERMWIDTH="$(tput cols)"
 
 # Set Output font colors
 BLDTXT=$(tput bold)
@@ -35,6 +44,7 @@ ERRTXT=$(tput setaf 1)
 SCSTXT=$(tput setaf 2)
 
 
+# Script: 01-IsRoot.sh
 IsRoot() {
   # Check if the script is run as root
   if [ "$(id -u)" = "0" ]; then
@@ -43,34 +53,49 @@ IsRoot() {
   fi
 }
 
+# Script: 02-CheckUpdate.sh
 CheckUpdate() {
 # Checks githhub for a new version of the file and downloads it
 
-  NEW_VERSION=$(lynx -dump ${VERSION_URL} | grep slackdoctool | cut -d "=" -f 2)
-  printf "\n${BLDTXT}%s${NRMTXT}\n" \
-    "Checking for an updated script."
+  # Display a message indicating that the script is checking for a new
+  # version
+  PrintText 2 "${BLDTXT}" "Checking for an updated script." 1
+
+  # get the new version number from the repo
+  local NEW_VERSION=$(lynx -dump ${VERSION_URL} | grep slackdoctool | cut -d "=" -f 2)
+
+  # Test to see if an update is available, display a message indicatin the
+  # status
   if [ "${NEW_VERSION}" = "${VERSION}" ]; then
-    printf "\n${SCSTXT}%s${NRMTXT}\n" \
-      "Your copy is up to date"
+    PrintText 2 "${SCSTXT}" "Your copy is up to date" 1
   else 
-    printf "\n${BLDTXT}%s${NRMTXT}\n" \
-      "A new version (${NEW_VERSION}) is available."
+    PrintText 2 "${BLDTXT}" "A new version (${NEW_VERSION}) is available." 1
   fi
 }
 
+# Script: 03-BuildStructure.sh
 BuildStructure() 
 {
   # Accepts no arguments, builds directory structure
 
+  # Tests if the directory does not exists
+  # if true build structure
+  # if false do nothing
   if [ ! -d ${TEMPLATE_DIR} ]; then
+
+    # Display message indicating the directory does not exist
     PrintText 0 "${ERRTXT}" "The user directory at ${SD_DIR} \
       does not exist" 1
+
+    # Prompt the user for creation and perform necessary actions
     read -p "Would you like to create it? (Y/N) :" yn
     case ${yn} in
       [Yy*]* )
-        mkdir -v ${SD_DIR}
+        # make the necessary directory
+        MakeDir ${SD_DIR}
+
         if [ ! -d ${TEMPLATE_DIR} ]; then
-          mkdir -v ${TEMPLATE_DIR}
+          MakeDir ${TEMPLATE_DIR}
         fi
         ;;
       * )
@@ -81,6 +106,7 @@ BuildStructure()
   fi
 }
 
+# Script: 10-PrintText.sh
 PrintText() {
   # Used to output properly wrapping text with indentation and formatting.
 
@@ -89,27 +115,29 @@ PrintText() {
   # Arg3 = Input Text
   # Arg4 = 1 - newline, 0 - no newline
 
-  INDENT=${1}
-  FORMAT="${2}"
-  INPUTTEXT="${3}"
+  local INDENT=${1}
+  local FORMAT="${2}"
+  local INPUTTEXT="${3}"
 
   # Determine if a new line is wanted after the text
   if [ "${4}" = "1" ]; then
-    NEWLINE="\n"
+    local NEWLINE="\n"
   else
-    NEWLINE=""
+    local NEWLINE=""
   fi
 
   # Build strings as independent words and setting words to not wrap on new
   # lines, but anticpiate new lines between words
-  NEWSTR="" 
+  #
+  # The command tput cols is fetching the colum count for the open terminal
+  local NEWSTR="" 
   for WORD in ${INPUTTEXT}
   do
     if [ "${NEWSTR}" = "" ]; then
         NEWSTR="${WORD}"
     else
-      TSTSTR="${NEWSTR}${WORD} "
-      if [ ${#TSTSTR} -lt $(($(tput cols)-${INDENT})) ]; then 
+      local TSTSTR="${NEWSTR}${WORD} "
+      if [ ${#TSTSTR} -lt $((${TERMWIDTH}-${INDENT})) ]; then 
         NEWSTR="${NEWSTR} ${WORD}"
       else
         printf "%*s" ${INDENT} ""
@@ -124,6 +152,7 @@ PrintText() {
   printf "${FORMAT}%s${NRMTXT}${NEWLINE}" "${NEWSTR}"
 }
 
+# Script: 11-PrintError.sh
 PrintError() {
   # Arg1 = Text To Display
 
@@ -131,31 +160,48 @@ PrintError() {
 
   local ERROR_TEXT="${1}"
 
+  # Peint the error message
   PrintText 2 "${ERRTXT}" "${ERROR_TEXT}" 1
-  PrintText 0 "" "" 1
+
+  # Peint a new line
+  printf "\n"
 }
 
+# Script: 12-HelpArg.sh
 HelpArg() {
-
-  OPT="${1}"
-  ARG="${2}"
-  DISTXT="${3}"
-
   # Defines and utilizes standard indentation and formatting to display the help arguments
 
-  IND=8
-  HIND=$((${IND}-4))
-  SPC=2
+  # Deinte the Option text
+  local OPT="${1}"
+  # Defin the Arguement text
+  local ARG="${2}"
+  # Define the description text
+  local DISTXT="${3}"
 
+  # Defin the standard text indendation
+  local IND=8
+  # Defin the indentation of the heading
+  local HIND=$((${IND}-4))
+
+  # Define the spacing that can be use
+  local SPC=2
+
+  # Display the option and argument
   PrintText ${HIND} "${BLDTXT}" "${OPT}  ${ARG}" 1
+
+  # Display the description
   PrintText ${IND} "${NRMTXT}" "${DISTXT}" 1
 
 }
 
+# Script: 20-RefreshTemplates.sh
 RefreshTemplates() {
   # Refresh the list of available templates
-  
+
+  # Display a message to the user stating upcoming action  
   PrintText 2 "${BLDTXT}"  "Refreshing the list of available templates..." 1
+
+  # Fetch the list of templates and store in local template file
   lynx -dump ${TEMP_URL} | awk -F: '/templates:/ {print $NF}'>${TEMP_FILE}
   
   # Make the order of the templates more structured
@@ -165,18 +211,21 @@ RefreshTemplates() {
   SetTemps
 }
 
+# Script: 21-SetTemps.sh
 SetTemps() {
-  # Sets an array with the contents of the template index 
-  TEMPS=()
+  # Sets an array with the contents of the template index file
   while read line; do
     TEMPS+=("${line}")
   done < ${TEMP_FILE}
 }
 
+# Script: 22-AvailableTemplates.sh
 AvailableTemplates() {
   # Displays a list of available templates and usage
+
   # Make sure the template file exists and the TEMPS array is set
   if [ ! -f "${TEMP_FILE}" ]; then
+    # The RefreshTemplates function included SetTemps
     RefreshTemplates
   else
     SetTemps
@@ -185,6 +234,8 @@ AvailableTemplates() {
   PrintText 0 "${BLDTXT}" "The following templates are available:" 1
   
   # Loop over the TEMPS array to display available templates 
+  # Continue to use printf as the Writext function creates errors with array
+  # values
   for i in ${!TEMPS[*]}
   do
     printf "%4d: %s\n" $i ${TEMPS[$i]}
@@ -192,6 +243,7 @@ AvailableTemplates() {
   printf "\n"
 }
 
+# Script: 23-PullTemplates.sh
 PullTemplates() {
   # Pulls the listed template files into the templates directory
 
@@ -202,14 +254,17 @@ PullTemplates() {
     SetTemps
   fi
 
-  # Pulls the templates listed in the TEMPS array.
+  # Fetches the templates listed in the TEMPS array.
   for TEMPLATE in "${TEMPS[@]}"
   do
     PullPage "templates:${TEMPLATE}" "${TEMPLATE_DIR}"
   done
+
+  # Display the success message
   PrintText 2 "${SCSTXT}" "All templates have been successfully retrieved." 1
 }
 
+# Script: 30-PullPage.sh
 PullPage() {
   # Pulls the single page from $1 into the location at $2
 
@@ -225,17 +280,16 @@ PullPage() {
     local DESTDIR="${2}/"
   fi
   
-
+  # If the destination directory does not exist exit with an error
   if [ ! -d ${DESTDIR} ]; then
-    PrintText 2 "${ERRTXT}" "The ${DESTDIR} directory does not exist,
-terminating action" 1
+    PrintText 2 "${ERRTXT}" "The ${DESTDIR} directory does not exist, terminating action" 1
     exit 1
   fi
 
-  # if requested page includs base url remove it so output page can be 
+  # if requested page includes base url remove it so output page can be 
   #  determined
   if [[ "${PAGE}" == *"${SD_URL}"* ]]; then
-    local PAGE="$(echo "${PAGE}"|cut -d "/" -f 4)"
+    PAGE="$(echo "${PAGE}"|cut -d "/" -f 4)"
   fi
 
   # Set output file name
@@ -247,23 +301,25 @@ terminating action" 1
 
   # If output file exists remove it
   if [ -e ${DESTDIR}${OF} ]; then
-    rm ${DESTDIR}${OF}
+    RemoveFile ${DESTDIR}${OF} 1
   fi
 
   # Append the base url to the page address
-  local PAGE=${SD_URL}/${PAGE}
+  PAGE=${SD_URL}/${PAGE}
 
+  # If output file arleady exists prompt user to overwrite it
   if [ -e ${DESTDIR}${OF} ]; then
-    printf "\n${ERRTXT}%s${NRMTXT}\n" "${DESTDIR}${OF} exists"
+    PrintText 0 "${NRMTXT}" "${DESTDIR}${OF} exists" 1
     read -p "Would you like to overwrite it? " yn
     case ${yn} in
     [Yy]* )
 
-      rm ${DESTDIR}${OF}
+      RemoveFile ${DESTDIR}${OF} 1
 
       FinishPull ${PAGE}${EXTRACTLINE} ${PAGE} ${DESTDIR}${OF}
       ;;
     * )
+      # Keep printf as a simple use
       printf ""
       ;;
     esac
@@ -272,6 +328,7 @@ terminating action" 1
   fi
 }
 
+# Script: 31-FinishPull.sh
 FinishPull() {
   # retrieve the page
   #
@@ -286,11 +343,12 @@ FinishPull() {
   
   local FAILTEXT="epub_LoadScript"
 
+  # Fetch the desired file
   wget ${URL} --output-document=${OUTFILE}
 
   # Test for a valid pull and display associated message
   if [ -n "$(cat ${OUTFILE}|grep ${FAILTEXT})" ]; then
-    rm ${OUTFILE}
+    RemoveFile ${OUTFILE} 1
     PrintText 2 "${ERRTXT}" "${DESCRIPT} does not exist" 1
   unset F_STATUS
   else
@@ -299,6 +357,7 @@ FinishPull() {
   fi
 }
 
+# Script: 32-PullFromList.sh
 PullFromList() {
   # This function is intended to allow a user to specificy a text file
   #  list of pages to retreive and pull them into the desired directory
@@ -308,20 +367,31 @@ PullFromList() {
 
   local LISTFILE=${1}
   local DESTDIR=${2}
-  FETCHED=()
-  FAILED=()
-  
+  local FETCHED=()
+  local FAILED=()
+
+  # Read each line of the input file
   while read PAG
   do
+    # Pull the specified page
     PullPage "${PAG}" "${DESTDIR}" 
+    # Appen page name is list dependent upon the outcome
     [ -z "${F_STATUS}" ] && FAILED+=("${PAG}") || FETCHED+=("${PAG}")
   done < ${LISTFILE}
+
+  # Ouput the list of passes and failed documents
+  # Not using printf or PrintText and it only display first value in arrays
   echo
-  echo "Fetched ${#FETCHED[@]} document(s): ${FETCHED[@]}"
-  echo "Failed to fetch ${#FAILED[@]} document(s): ${FAILED[@]}"
+  if [[ ${#FETCHED[@]} -ne 0 ]]; then
+    echo "Fetched ${#FETCHED[@]} document(s): ${FETCHED[@]}"
+  fi
+  if [[ ${#FAILED[@]} -ne 0 ]]; then
+    echo "Failed to fetch ${#FAILED[@]} document(s): ${FAILED[@]}"
+  fi
   echo
 }
 
+# Script: 40-CreateNew.sh
 CreateNew() {
   # Copies a template into a new filename and sets it for editing
 
@@ -330,27 +400,29 @@ CreateNew() {
     PullTemplates
   fi
   
-  TEMPLATE_FILE=${TEMPLATE_DIR}/${TEMPS[${USETEMPLATE}]}.${EXTENSION}
-  OUTPUT_FILE=${SD_DIR}/${NEWFILE}.${EXTENSION}
+  local TEMPLATE_FILE=${TEMPLATE_DIR}/${TEMPS[${USETEMPLATE}]}.${EXTENSION}
+  local OUTPUT_FILE=${SD_DIR}/${NEWFILE}.${EXTENSION}
 
   if [ -f ${TEMPLATE_FILE} ]; then
 
     # Check if the output file already exists. If so, edit it.
     if [ -f ${OUTPUT_FILE} ]; then
       vim ${OUTPUT_FILE}
-
+    else
       # If the output file does not exist, copy the template, rename and
       # edit it.
-    else
       cp ${TEMPLATE_FILE} ${OUTPUT_FILE} && vim ${OUTPUT_FILE}
     fi
   else
+    # If template does not exist or is unaccessible then display error
+    # messages
     PrintError "There have been problems accessing the template"
     PrintError "Please, list and/or refresh the templates with -r option"
     exit 1
   fi
 }
 
+# Script: 41-CopyToClipboard.sh
 CopyToClipboard()
 {
   # Copies a file to the clipboard for pasteing online
@@ -362,13 +434,14 @@ CopyToClipboard()
   local CONFS=${2}
 
 
+  # Test to see if xclip is installed, if false display error and exit
   ls /var/log/packages | grep "\<xclip\>" > /dev/null
   if [ ! $? -eq 0 ]; then
-    printf "\n${ERRTXT}%s${NRMTXT}\n" \
-      "xclip is not installed, the contents will need to be manually copied."
-    return 1
+    PrintText 0 "${ERRTXT}" "xclip is not installed, the contents will need to be manually copied." 1
+    exit 1
   fi
 
+  # If file exists Start copy process
   if [ -f ${FILENAME} ]
   then
     if [ "${CONFS}" = "1" ]
@@ -380,8 +453,7 @@ clipboard [y/N]? " yn
       case ${yn} in
       [Yy*]* )
         cat ${FILENAME} | xclip -selection clipboard
-        printf "\n${SCSTXT}%s${NRMTXT}\n" \
-          "The contents of ${FILENAME} has been copied to clipboard."
+        PrintText 0 "${SCSTXT}" "The contents of ${FILENAME} has been copied to clipboard." 1
         return 1
         ;;
       esac
@@ -389,19 +461,22 @@ clipboard [y/N]? " yn
       cat ${FILENAME} | xclip -selection clipboard
     fi
   else
-    printf "\n${ERRTXT}%s${NRMTXT}\n" \
-      "The File ${FILENAME} does not exist, terminating action."
+    PrintText 0 "${ERRTXT}" "The File ${FILENAME} does not exist, terminating action." 1
     exit 1
   fi
 }
 
+# Script: 48-GetSyntaxExample.sh
 GetSyntaxExample () {
-      PullPage "wiki:syntax" ${SD_DIR}
-      PrintText 0 "" "" 1
-      PrintText 0 "${NRMTXT}" "The example syntax file is now located at
-${SD_DIR}/wiki-syntax.${EXTENSION}" 1
+  # Fetch the Syntax file
+  PullPage "wiki:syntax" ${SD_DIR}
+
+  # Print a success message
+  printf "\n"
+  PrintText 0 "${NRMTXT}" "The example syntax file is now located at ${SD_DIR}/wiki-syntax.${EXTENSION}" 1
 }
 
+# Script: 60-PrepSyntax.sh
 PrepSyntax() {
   case "${SYNAPP}" in
     vim)
@@ -418,12 +493,14 @@ authors of slackdoctool if you want it included."
   esac
 }
 
+# Script: 61-VimSyntax.sh
 VimSyntax() {
   # Update/ Appends the necessary directive to the users .vimrc
   #  file to set syntax highlighting for slackdocs
 
   local VIMRC="${HOME}/.vimrc"
 
+  # Fetch a new Syntax File
   wget ${SYNTAX_URL}/${SYNF_VIM} --output-document=${SD_DIR}/.${SYNF_VIM}
 
   # removes existing slackdoc syntax template lines if they exist
@@ -435,20 +512,24 @@ VimSyntax() {
 filetype=${FILETYPE}">>${VIMRC}
   echo "au! Syntax ${FILETYPE} source ${SD_DIR}/.${SYNF_VIM}">>${VIMRC}
 
+  # Display a success message to the user
   PrintText 2 "${SCSTXT}" "The script has added the following lines to your
 vimrc file" 1
+  # Display the newly created lines
   cat ${VIMRC} | grep ${FILETYPE}
   printf "\n"
 }
 
+# Script: 62-KateSyntax.sh
 KateSyntax() {
+  # Display message indicating how to enable syntax highliting in kate
   PrintText 2 "${BLDTXT}" \
-          "To implement syntax highlighting to slackdoc articles in kate you
-need to enable the MediaWiki syntax highlighting by going to Tools ->
-Highlighting -> Markup -> Mediawiki." 1
+          "To implement syntax highlighting to slackdoc articles in kate you need to enable the MediaWiki syntax highlighting by going to Tools -> Highlighting -> Markup -> Mediawiki." 1
 }
 
+# Script: 80-PrintHelp.sh
 DisplayHelp() {
+# Do not edit this file it is composed from the contents of args.txt
 PrintText 4 "${SCSTXT}" "Slackware Documentation Project - Off-line Tools" 1
 PrintText 4 "${BLDTXT}" "Version: ${VERSION}" 1
 PrintText 0 "" "" 1
@@ -476,14 +557,53 @@ HelpArg "-u" "" "Check for an update to this script."
 HelpArg "-a" "" "Download all base and syntax files from the slackdocs wiki."
 }
 
+# Script: 94-RemoveFile.sh
+RemoveFile () {
+  # This function is intended to verbosely delete the input file and exit
+  # function with and error message if the rm command fails
+
+  # Arg 1 = File Name
+  # Arg 2 = boolean for verbose output
+
+  local VERB=""
+
+  # Decide if the output will be verbose
+  if [ "$2" = "1" ]; then
+    VERB="-v"
+  fi
+
+  # IF file exists attempt to remove it
+  if [ -f ${1} ]; then
+    rm ${VERB} ${1}
+    if [ ! "$?" = "0" ]; then
+      PrintError "Could not delete ${1}, check the permissions of the parent directory"
+      exit 1
+    fi
+  fi
+}
+
+# Script: 95-MakeDir.sh
+MakeDir () {
+  # This function is intended to verbosely build the input directory and exit
+  # function with and error message if the mkdir command fails
+
+  mkdir -pv ${1}
+  if [ ! "$?" = "0" ]; then
+    PrintError "Could not make ${1}, check the permissions of the parent directory"
+    exit 1
+  fi
+}
+
+# Script: 96-CheckArgs.sh
 CheckArgs () {
 
+  # If no arguments are displayed then display the help output
   if [ "${#}" = "0" ]; then
-    echo "no arg"
     DisplayHelp
     exit 1
   fi
 
+  # Test the arguments
 while getopts ":ac:d:f:hln:o:rs:uw:ST" opt; do
     case $opt in
   h)
@@ -557,8 +677,13 @@ while getopts ":ac:d:f:hln:o:rs:uw:ST" opt; do
 done
 }
 
+# Script: 97-CheckValid.sh
 CheckValid() {
-  if [ -n "${SYNAPP}" ]; then # confirmed
+  # This function tests all possible arguments for errors and reports or
+  # terminates as necessary
+
+  # If syntax highlight is requested test arguments
+  if [ -n "${SYNAPP}" ]; then
   #  PrepSyntax
     case "${SYNAPP}" in 
       vim)
@@ -590,6 +715,7 @@ CheckValid() {
     ISERROR=1
   fi
 
+  # Verify when an output directory is entered that it was with valid options
   if [ -n "${DESTDIR}" ]&&[ -z "${GETFILE}" ]&&[ -z "${GETURL}" ]; then
     PrintError "Output directories are only valid when fetching URLs or a list of URLs, the option is being ignored"
   fi
@@ -614,40 +740,33 @@ CheckValid() {
       fi
     fi
   fi
-  
-  #
-  
-
-
-  #NEWFILE
-  # Check for existance in the function, if exists then request to overwrite
-
+ 
+  # If one of more errors are reports exit with a status 1 
   if [ -n "${ISERROR}" ]; then
     exit 1
   fi
 }
 
+# Script: 98-RunFunctions.sh
 RunFunctions() {
-  if [ -n "${FETCHSYNTAX}" ]; then # confirmed
+  if [ -n "${FETCHSYNTAX}" ]; then 
     GetSyntaxExample
   fi
 
-  if [ -n "${SYNAPP}" ]; then # confirmed
+  if [ -n "${SYNAPP}" ]; then 
     PrepSyntax
   fi
 
-  #REFRESHTEMPLATES
-  if [ "${FETCHTEMPLATES}" = "1" ]; then # confirmed
+  if [ "${FETCHTEMPLATES}" = "1" ]; then 
     PullTemplates
   fi
 
-  #LISTTEMPLATES
-  if [ "${LISTTEMPLATES}" = "1" ]; then # confirmed
+  if [ "${LISTTEMPLATES}" = "1" ]; then 
     AvailableTemplates
   fi
 
   # FETCH FROM URL
-  if [ -n "${GETURL}" ]; then # confirmed
+  if [ -n "${GETURL}" ]; then 
     # If no destination directory is added default to the slackdoc dir
     if [ -z "${DESTDIR}" ]; then
       DESTDIR=${SD_DIR}
@@ -657,7 +776,7 @@ RunFunctions() {
   fi
   
   # FETCH FROM LIST
-  if [ -n "${GETFILE}" ]; then # confirmed
+  if [ -n "${GETFILE}" ]; then 
     # If no destination directory is added default to the slackdoc dir
     if [ -z "${DESTDIR}" ]; then
       DESTDIR=${SD_DIR}
@@ -666,23 +785,20 @@ RunFunctions() {
     PullFromList ${GETFILE} ${DESTDIR}
   fi
 
-  #COPYFILE
-  if [ -n "${COPYFILE}" ]; then # confirmed
+  if [ -n "${COPYFILE}" ]; then 
     CopyToClipboard "${COPYFILE}"
   fi
 
-  #USETEMPLATE
   if [ -n "${USETEMPLATE}" ]&&[ -n "${NEWFILE}" ]; then
     CreateNew "${USETEMPLATE}" "${NEWFILE}"
   fi
-
-  #NEWFILE
 
   if [ -n "${GETUPDATE}" ]; then
     CheckUpdate
   fi
 }
 
+# Script: 99-execs.sh
 
 # Check if run as root, if root then exit
 IsRoot
@@ -699,20 +815,4 @@ RunFunctions
 
 # If it succeeds until now it processed successfully
 exit 0
-
-BLACK=$(tput setaf 0)
-RED=$(tput setaf 1)
-GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 3)
-LIME_YELLOW=$(tput setaf 190)
-POWDER_BLUE=$(tput setaf 153)
-BLUE=$(tput setaf 4)
-MAGENTA=$(tput setaf 5)
-CYAN=$(tput setaf 6)
-WHITE=$(tput setaf 7)
-BRIGHT=$(tput bold)
-NORMAL=$(tput sgr0)
-BLINK=$(tput blink)
-REVERSE=$(tput smso)
-UNDERLINE=$(tput smul)
 
